@@ -1,0 +1,562 @@
+<!-- File: taisetsu.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="たいせつ">
+<title>たいせつ</title>
+<style>
+  :root{
+    --bg:#f5f2ee;
+    --card:#ffffff;
+    --accent:#ff8a65;
+    --accent-dark:#e6673f;
+    --text:#3a332f;
+    --sub:#9c9187;
+    --tag-bg:#fdece3;
+    --tag-text:#e6673f;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{
+    margin:0;
+    padding:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN",sans-serif;
+    height:100%;
+    overflow:hidden;
+  }
+  #app{
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+    height:100dvh;
+    max-width:480px;
+    margin:0 auto;
+    position:relative;
+  }
+  header{
+    padding:calc(env(safe-area-inset-top,0px) + 18px) 20px 8px;
+    text-align:center;
+    flex-shrink:0;
+  }
+  header h1{
+    margin:0;
+    font-size:20px;
+    font-weight:700;
+    letter-spacing:2px;
+    color:var(--text);
+  }
+  .search-wrap{
+    padding:10px 16px;
+    flex-shrink:0;
+  }
+  .search-box{
+    display:flex;
+    align-items:center;
+    background:#fff;
+    border-radius:14px;
+    padding:10px 14px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.05);
+  }
+  .search-box span{
+    margin-right:8px;
+    font-size:15px;
+    color:var(--sub);
+  }
+  .search-box input{
+    border:none;
+    outline:none;
+    flex:1;
+    font-size:15px;
+    background:transparent;
+    color:var(--text);
+  }
+  .search-box input::placeholder{color:var(--sub);}
+  .active-filter{
+    display:none;
+    align-items:center;
+    gap:6px;
+    margin:0 16px 4px;
+    font-size:12px;
+    color:var(--accent-dark);
+  }
+  .active-filter.show{display:flex;}
+  .active-filter button{
+    border:none;
+    background:none;
+    color:var(--sub);
+    font-size:12px;
+    cursor:pointer;
+  }
+  main{
+    flex:1;
+    overflow-y:auto;
+    padding:6px 16px 100px;
+    -webkit-overflow-scrolling:touch;
+  }
+  .empty{
+    text-align:center;
+    color:var(--sub);
+    margin-top:60px;
+    font-size:14px;
+    line-height:1.8;
+  }
+  .card{
+    background:var(--card);
+    border-radius:18px;
+    padding:16px 16px 14px;
+    margin-bottom:12px;
+    box-shadow:0 3px 10px rgba(0,0,0,0.06);
+    position:relative;
+    animation:fadeIn .25s ease;
+  }
+  @keyframes fadeIn{
+    from{opacity:0; transform:translateY(6px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+  .card-top{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+  }
+  .card-emoji{
+    font-size:22px;
+    line-height:1;
+    flex-shrink:0;
+  }
+  .card-text{
+    font-size:15px;
+    line-height:1.6;
+    color:var(--text);
+    white-space:pre-wrap;
+    word-break:break-word;
+    flex:1;
+  }
+  .card-tags{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-top:10px;
+    padding-left:32px;
+  }
+  .tag{
+    background:var(--tag-bg);
+    color:var(--tag-text);
+    font-size:12px;
+    padding:4px 10px;
+    border-radius:10px;
+    cursor:pointer;
+    border:none;
+  }
+  .card-date{
+    position:absolute;
+    top:14px;
+    right:16px;
+    font-size:11px;
+    color:var(--sub);
+  }
+  .fab{
+    position:absolute;
+    right:calc(20px + env(safe-area-inset-right,0px));
+    bottom:calc(24px + env(safe-area-inset-bottom,0px));
+    width:58px;
+    height:58px;
+    border-radius:50%;
+    background:var(--accent);
+    color:#fff;
+    font-size:28px;
+    border:none;
+    box-shadow:0 6px 16px rgba(255,138,101,0.5);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    z-index:5;
+  }
+  .fab:active{transform:scale(0.94);}
+
+  /* modal */
+  .overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.35);
+    display:none;
+    align-items:flex-end;
+    justify-content:center;
+    z-index:10;
+  }
+  .overlay.show{display:flex;}
+  .sheet{
+    width:100%;
+    max-width:480px;
+    background:#fff;
+    border-radius:22px 22px 0 0;
+    padding:14px 20px calc(20px + env(safe-area-inset-bottom,0px));
+    transform:translateY(100%);
+    transition:transform .28s ease;
+    max-height:88vh;
+    overflow-y:auto;
+  }
+  .overlay.show .sheet{transform:translateY(0);}
+  .sheet-handle{
+    width:40px;
+    height:5px;
+    background:#e0dad3;
+    border-radius:3px;
+    margin:0 auto 14px;
+  }
+  .emoji-row{
+    display:flex;
+    gap:8px;
+    margin-bottom:14px;
+    flex-wrap:wrap;
+  }
+  .emoji-btn{
+    width:42px;
+    height:42px;
+    font-size:20px;
+    border-radius:12px;
+    border:2px solid transparent;
+    background:#f5f2ee;
+    cursor:pointer;
+  }
+  .emoji-btn.selected{
+    border-color:var(--accent);
+    background:var(--tag-bg);
+  }
+  label.field-label{
+    font-size:12px;
+    color:var(--sub);
+    margin:6px 0 4px;
+    display:block;
+  }
+  textarea#itemText{
+    width:100%;
+    min-height:90px;
+    border:1px solid #eee2d8;
+    border-radius:14px;
+    padding:12px;
+    font-size:15px;
+    font-family:inherit;
+    resize:none;
+    background:#fbf9f6;
+    color:var(--text);
+  }
+  input#itemTags{
+    width:100%;
+    border:1px solid #eee2d8;
+    border-radius:14px;
+    padding:12px;
+    font-size:14px;
+    background:#fbf9f6;
+    color:var(--text);
+  }
+  input#itemTags::placeholder,textarea::placeholder{color:var(--sub);}
+  .sheet-actions{
+    display:flex;
+    gap:10px;
+    margin-top:18px;
+  }
+  .btn{
+    flex:1;
+    padding:14px;
+    border-radius:14px;
+    border:none;
+    font-size:15px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .btn-save{
+    background:var(--accent);
+    color:#fff;
+  }
+  .btn-save:active{background:var(--accent-dark);}
+  .btn-delete{
+    background:#f5f2ee;
+    color:#c0392b;
+  }
+  .btn-cancel{
+    background:#f5f2ee;
+    color:var(--sub);
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header><h1>たいせつ</h1></header>
+
+  <div class="search-wrap">
+    <div class="search-box">
+      <span>🔍</span>
+      <input id="searchInput" type="text" placeholder="言葉・タグを検索">
+    </div>
+    <div class="active-filter" id="activeFilter">
+      <span id="activeFilterText"></span>
+      <button id="clearFilterBtn">✕ 解除</button>
+    </div>
+  </div>
+
+  <main id="listArea"></main>
+
+  <button class="fab" id="addBtn">＋</button>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="emoji-row" id="emojiRow"></div>
+
+    <label class="field-label">言葉</label>
+    <textarea id="itemText" placeholder="残しておきたい言葉を書く"></textarea>
+
+    <label class="field-label">タグ（スペースで区切って複数入力）</label>
+    <input id="itemTags" type="text" placeholder="嬉しかった 言葉">
+
+    <div class="sheet-actions">
+      <button class="btn btn-cancel" id="cancelBtn">キャンセル</button>
+      <button class="btn btn-delete" id="deleteBtn" style="display:none;">削除</button>
+      <button class="btn btn-save" id="saveBtn">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'taisetsu_items_v1';
+  const EMOJIS = ['📝','📱','💬','❤️','✨','🎵','📷','🌱'];
+
+  let items = load();
+  let editingId = null;
+  let selectedEmoji = EMOJIS[0];
+  let activeTagFilter = null;
+
+  const listArea = document.getElementById('listArea');
+  const searchInput = document.getElementById('searchInput');
+  const overlay = document.getElementById('overlay');
+  const emojiRow = document.getElementById('emojiRow');
+  const itemText = document.getElementById('itemText');
+  const itemTags = document.getElementById('itemTags');
+  const activeFilter = document.getElementById('activeFilter');
+  const activeFilterText = document.getElementById('activeFilterText');
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw) return JSON.parse(raw);
+    }catch(e){}
+    return [
+      {
+        id: cryptoId(),
+        emoji: '📱',
+        text: 'この言葉、忘れたくない',
+        tags: ['嬉しかった','言葉'],
+        createdAt: Date.now()
+      }
+    ];
+  }
+
+  function save(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  }
+
+  function cryptoId(){
+    return 'id_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+  }
+
+  function formatDate(ts){
+    const d = new Date(ts);
+    const now = new Date();
+    const diffDays = Math.floor((now.setHours(0,0,0,0) - new Date(ts).setHours(0,0,0,0)) / 86400000);
+    if(diffDays === 0) return '今日';
+    if(diffDays === 1) return '昨日';
+    if(diffDays < 7) return diffDays + '日前';
+    return d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate();
+  }
+
+  function renderEmojiRow(){
+    emojiRow.innerHTML = '';
+    EMOJIS.forEach(e=>{
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'emoji-btn' + (e === selectedEmoji ? ' selected' : '');
+      b.textContent = e;
+      b.onclick = ()=>{
+        selectedEmoji = e;
+        renderEmojiRow();
+      };
+      emojiRow.appendChild(b);
+    });
+  }
+
+  function renderList(){
+    const query = searchInput.value.trim().toLowerCase();
+    let filtered = items.slice().sort((a,b)=> b.createdAt - a.createdAt);
+
+    if(activeTagFilter){
+      filtered = filtered.filter(it => it.tags.includes(activeTagFilter));
+    }
+    if(query){
+      filtered = filtered.filter(it=>{
+        const inText = it.text.toLowerCase().includes(query);
+        const inTags = it.tags.some(t => t.toLowerCase().includes(query));
+        return inText || inTags;
+      });
+    }
+
+    listArea.innerHTML = '';
+
+    if(filtered.length === 0){
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.innerHTML = '見つかりませんでした<br>＋ で新しい言葉を残しましょう';
+      listArea.appendChild(empty);
+      return;
+    }
+
+    filtered.forEach(it=>{
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      const top = document.createElement('div');
+      top.className = 'card-top';
+
+      const emo = document.createElement('div');
+      emo.className = 'card-emoji';
+      emo.textContent = it.emoji || '📝';
+
+      const text = document.createElement('div');
+      text.className = 'card-text';
+      text.textContent = it.text;
+
+      top.appendChild(emo);
+      top.appendChild(text);
+      card.appendChild(top);
+
+      if(it.tags && it.tags.length){
+        const tagsWrap = document.createElement('div');
+        tagsWrap.className = 'card-tags';
+        it.tags.forEach(tag=>{
+          const tb = document.createElement('button');
+          tb.className = 'tag';
+          tb.textContent = '#' + tag;
+          tb.onclick = (ev)=>{
+            ev.stopPropagation();
+            activeTagFilter = tag;
+            searchInput.value = '';
+            updateFilterUI();
+            renderList();
+          };
+          tagsWrap.appendChild(tb);
+        });
+        card.appendChild(tagsWrap);
+      }
+
+      const date = document.createElement('div');
+      date.className = 'card-date';
+      date.textContent = formatDate(it.createdAt);
+      card.appendChild(date);
+
+      card.onclick = ()=> openEdit(it.id);
+      listArea.appendChild(card);
+    });
+  }
+
+  function updateFilterUI(){
+    if(activeTagFilter){
+      activeFilter.classList.add('show');
+      activeFilterText.textContent = '#' + activeTagFilter + ' で絞り込み中';
+    }else{
+      activeFilter.classList.remove('show');
+    }
+  }
+
+  document.getElementById('clearFilterBtn').onclick = ()=>{
+    activeTagFilter = null;
+    updateFilterUI();
+    renderList();
+  };
+
+  searchInput.addEventListener('input', renderList);
+
+  function openAdd(){
+    editingId = null;
+    selectedEmoji = EMOJIS[0];
+    itemText.value = '';
+    itemTags.value = '';
+    document.getElementById('deleteBtn').style.display = 'none';
+    renderEmojiRow();
+    overlay.classList.add('show');
+    setTimeout(()=> itemText.focus(), 200);
+  }
+
+  function openEdit(id){
+    const it = items.find(x=>x.id===id);
+    if(!it) return;
+    editingId = id;
+    selectedEmoji = it.emoji || EMOJIS[0];
+    itemText.value = it.text;
+    itemTags.value = it.tags.join(' ');
+    document.getElementById('deleteBtn').style.display = 'block';
+    renderEmojiRow();
+    overlay.classList.add('show');
+  }
+
+  function closeSheet(){
+    overlay.classList.remove('show');
+  }
+
+  document.getElementById('addBtn').onclick = openAdd;
+  document.getElementById('cancelBtn').onclick = closeSheet;
+  overlay.addEventListener('click', (e)=>{
+    if(e.target === overlay) closeSheet();
+  });
+
+  document.getElementById('saveBtn').onclick = ()=>{
+    const text = itemText.value.trim();
+    if(!text){
+      itemText.focus();
+      return;
+    }
+    const tags = itemTags.value
+      .split(/[\s　]+/)
+      .map(t=> t.replace(/^#/,'').trim())
+      .filter(t=> t.length>0);
+
+    if(editingId){
+      const it = items.find(x=>x.id===editingId);
+      it.text = text;
+      it.tags = tags;
+      it.emoji = selectedEmoji;
+    }else{
+      items.push({
+        id: cryptoId(),
+        emoji: selectedEmoji,
+        text: text,
+        tags: tags,
+        createdAt: Date.now()
+      });
+    }
+    save();
+    closeSheet();
+    renderList();
+  };
+
+  document.getElementById('deleteBtn').onclick = ()=>{
+    if(!editingId) return;
+    items = items.filter(x=>x.id !== editingId);
+    save();
+    closeSheet();
+    renderList();
+  };
+
+  renderEmojiRow();
+  updateFilterUI();
+  renderList();
+})();
+</script>
+</body>
+</html>
